@@ -1,6 +1,5 @@
 package com.wanda.epc.timer;
 
-
 import com.wanda.epc.cache.CacheUtil;
 import com.wanda.epc.config.Config;
 import com.wanda.epc.controller.CameraController;
@@ -18,14 +17,12 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 /**
- * @author LianYanFei
- * @version 1.0
- * @project iot_epc_spdj
+ * @Title CameraTimer.java
  * @description 定时任务
- * @date 2023/10/18 18:26:47
- */
+ * @time 2023年11月28日 下午3:11:36
+ * @author LianYanFei
+ **/
 @Component
 public class CameraTimer implements CommandLineRunner {
 
@@ -61,6 +58,7 @@ public class CameraTimer implements CommandLineRunner {
 								logger.info("定时任务 当前设备使用人数为0结束推流 设备信息：[ip：" + CacheUtil.STREATMAP.get(key).getIp()
 										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
 										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
+										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
 										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
 										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
 										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
@@ -71,13 +69,23 @@ public class CameraTimer implements CommandLineRunner {
 								logger.info("定时任务 当前设备使用时间超时结束推流 设备信息：[ip:" + CacheUtil.STREATMAP.get(key).getIp()
 										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
 										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
+										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
 										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
 										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
 										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
 							} else if (null != CacheUtil.STREATMAP.get(key).getM3u8path()
 									&& !"".equals(CacheUtil.STREATMAP.get(key).getM3u8path())
 									&& (nowtime - opentime) / 1000 / 60 >= config.getKeepalive()) {
-
+								// hls切片超时删除
+//								deleteDir(CacheUtil.STREATMAP.get(key).getM3u8path());
+//								logger.info("定时任务 当前设备使用时间超时清除播放文件 设备信息：[ip:" + CacheUtil.STREATMAP.get(key).getIp()
+//										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
+//										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
+//										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
+//										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
+//										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
+//										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
+//								CacheUtil.STREATMAP.remove(key);
 							}
 						} catch (ParseException e) {
 							e.printStackTrace();
@@ -88,5 +96,29 @@ public class CameraTimer implements CommandLineRunner {
 		}, 1, 1000 * 60);
 	}
 
-
+	/**
+	 * @Title: deleteDir
+	 * @Description: 删除文件夹下的所有内容
+	 * @param path
+	 * @return: boolean
+	 **/
+	private boolean deleteDir(String path) {
+		File file = new File(path);
+		if (!file.exists()) {// 判断待删除目录是否存在
+			logger.error(path + " The dir are not exists!");
+			return false;
+		}
+		String[] content = file.list();// 取得当前目录下所有文件和文件夹
+		for (String name : content) {
+			File temp = new File(path, name);
+			if (temp.isDirectory()) {// 判断是否是目录
+				deleteDir(temp.getAbsolutePath());// 递归调用，删除目录里的内容
+				temp.delete();// 删除空目录
+			} else {
+				temp.delete();
+			}
+		}
+		file.delete();
+		return true;
+	}
 }

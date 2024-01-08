@@ -3,13 +3,17 @@ package com.wanda.epc.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-
 /**
- * @author LianYanFei
- * @version 1.0
- * @project iot_epc_spdj
+ * @Title Config.java
  * @description 读取配置文件的bean
- * @date 2023/10/18 16:32:42
+ * @time 2023年11月28日 下午3:35:38
+ * @author LianYanFei
+ **/
+/**
+ * @ClassName: Config
+ * @Description:
+ * @author: LianYanFei
+ * @date: 2023-11-28
  */
 @Component
 @ConfigurationProperties(prefix = "config")

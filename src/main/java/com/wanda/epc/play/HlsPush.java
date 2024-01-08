@@ -1,11 +1,9 @@
 package com.wanda.epc.play;
 
-
-import com.netsdk.lib.NetSDKLib;
-import com.sun.jna.NativeLong;
 import com.wanda.epc.config.Config;
 import com.wanda.epc.pojo.CameraPojo;
 import com.wanda.epc.util.Utils;
+import com.sun.jna.NativeLong;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -28,8 +26,8 @@ import static org.bytedeco.ffmpeg.global.avcodec.av_packet_unref;
 /**
  * @ClassName: HlsPush
  * @Description: 历史回放转hls流切片
- * @author: wuguodong
- * @date: 2020-12-11
+ * @author: LianYanFei
+ * @date: 2023年11月28日
  */
 public class HlsPush {
 
@@ -52,7 +50,7 @@ public class HlsPush {
 	private PipedInputStream inputStream;// 管道输入流
 	private PipedOutputStream outputStream;// 管道输出流
 	private int err_index = 0;// 推流过程中出现错误的次数
-	private NetSDKLib.LLong sdkHandle;// 直播或回放的句柄
+	private NativeLong sdkHandle;// 直播或回放的句柄
 	private int playSign;// 回放的标志，用于停止回放释放资源
 	private int timebase;// 时钟基
 	private long dts = 0, pts = 0;// pkt的dts、pts时间戳
@@ -68,8 +66,8 @@ public class HlsPush {
 		this.exitsign = exitsign;
 	}
 
-	public HlsPush(CameraPojo pojo, PipedInputStream inputStream, PipedOutputStream outputStream, NetSDKLib.LLong sdkHandle,
-                   int playSign) {
+	public HlsPush(CameraPojo pojo, PipedInputStream inputStream, PipedOutputStream outputStream, NativeLong sdkHandle,
+			int playSign) {
 		this.pojo = pojo;
 		this.inputStream = inputStream;
 		this.outputStream = outputStream;
@@ -128,7 +126,7 @@ public class HlsPush {
 				Thread.sleep(100);
 				if (new Date().getTime() - stime > 2000) {
 					logger.info("hcsdk 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort() + " channel:"
-							+ pojo.getChannel()  + " starttime:" + pojo.getStarttime()
+							+ pojo.getChannel() + " stream:" + pojo.getStream() + " starttime:" + pojo.getStarttime()
 							+ " endtime:" + pojo.getEndtime() + " url:" + pojo.getUrl() + "] 无视频流数据");
 					return;
 				}
@@ -177,7 +175,7 @@ public class HlsPush {
 			fc = grabber.getFormatContext();
 			this.recorder.start(fc);
 			logger.debug("hcsdk 开始切片 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort() + " channel:"
-					+ pojo.getChannel()  + " starttime:" + pojo.getStarttime()
+					+ pojo.getChannel() + " stream:" + pojo.getStream() + " starttime:" + pojo.getStarttime()
 					+ " endtime:" + pojo.getEndtime() + " url:" + pojo.getUrl() + "]");
 			// 清空探测时留下的缓存
 //			grabber.flush();
@@ -229,8 +227,8 @@ public class HlsPush {
 		} finally {
 			release();
 			logger.info("hcsdk 切片结束 耗时：" + (System.currentTimeMillis() - jobStartTime) / 1000 + "s 设备信息：[ip:"
-					+ pojo.getIp() + " port:" + pojo.getPort() + " channel:" + pojo.getChannel() +
-					 " starttime:" + pojo.getStarttime() + " endtime:" + pojo.getEndtime() + " url:"
+					+ pojo.getIp() + " port:" + pojo.getPort() + " channel:" + pojo.getChannel() + " stream:"
+					+ pojo.getStream() + " starttime:" + pojo.getStarttime() + " endtime:" + pojo.getEndtime() + " url:"
 					+ pojo.getUrl() + "]");
 		}
 	}
