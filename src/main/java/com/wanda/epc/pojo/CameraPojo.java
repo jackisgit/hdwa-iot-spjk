@@ -89,7 +89,8 @@ public class CameraPojo implements Serializable {
 	public void setChannel(String channel) {
 		this.channel = channel;
 		if (!"".equals(channel) && null != channel) {
-			this.previewinfo.lChannel = Integer.parseInt(channel);
+			this.previewinfo.lChannel = 0xffffffff;
+			this.previewinfo.byStreamID  = channel.getBytes();
 		}
 	}
 

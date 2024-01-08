@@ -67,6 +67,12 @@ public class DeviceInfo {
     @TableField(value = "cameraName")
     private String cameraName;
 
+    /**
+     * 海康威视监控点唯一标识
+     */
+    @TableField(value = "indexCode")
+    private String indexCode;
+
 
 
 

@@ -1,6 +1,5 @@
 package com.wanda.epc.cache;
 
-
 import com.wanda.epc.callback.PlayDataCallBack;
 import com.wanda.epc.callback.RealDataCallBack;
 import com.wanda.epc.play.HlsPush;
@@ -9,6 +8,7 @@ import com.wanda.epc.play.RtmpPush;
 import com.wanda.epc.pojo.CameraPojo;
 import com.wanda.epc.sdk.HCLoginSDK;
 import com.sun.jna.NativeLong;
+import org.bytedeco.ffmpeg.avcodec.MpegEncContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,8 +58,6 @@ public class CacheUtil {
 	 */
 	public static Map<String, PlayDataCallBack> HISTORYCALLBACK = new ConcurrentHashMap<>();
 
-	public static Map<String, NativeLong> HISTORYCALLBACKHANDLE = new ConcurrentHashMap<>();
-
 	/*
 	 * 保存直播的callback
 	 */
@@ -74,13 +72,6 @@ public class CacheUtil {
 	 * 保存拖动前的解码时间戳
 	 */
 	public static Map<String, Long> DTSMAP = new ConcurrentHashMap<>();
-
-
-
-
-
-
-
 
 
 }

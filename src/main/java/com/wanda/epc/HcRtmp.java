@@ -35,6 +35,15 @@ public class HcRtmp {
 	public HCInitSDK init;
 
 	public static void main(String[] args) {
+		// 服务启动执行FFmpegFrameGrabber和FFmpegFrameRecorder的tryLoad()，以免导致第一次推流时耗时。
+		try {
+			FFmpegFrameGrabber.tryLoad();
+			FFmpegFrameRecorder.tryLoad();
+		} catch (org.bytedeco.javacv.FrameRecorder.Exception e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		// 将服务启动时间存入缓存
 		CacheUtil.STARTTIME = new Date().getTime();
 		final ApplicationContext applicationContext = SpringApplication.run(HcRtmp.class, args);
@@ -43,6 +52,7 @@ public class HcRtmp {
 		Utils.setApplicationContext(applicationContext);
 		HlsPush.setApplicationContext(applicationContext);
 		// 加载动态库，初始化sdk
+//		HCNetSDK.tryLoad();
 		HCNetSDK.INSTANCE.NET_DVR_Init();
 	}
 
@@ -60,7 +70,6 @@ public class HcRtmp {
 				break;
 			}
 		}
-
 		// 关闭线程池
 		CameraThread.MyRunnable.es.shutdown();
 		// 销毁定时器
