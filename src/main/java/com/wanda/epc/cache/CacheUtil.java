@@ -8,7 +8,6 @@ import com.wanda.epc.play.RtmpPush;
 import com.wanda.epc.pojo.CameraPojo;
 import com.wanda.epc.sdk.HCLoginSDK;
 import com.sun.jna.NativeLong;
-import org.bytedeco.ffmpeg.avcodec.MpegEncContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
