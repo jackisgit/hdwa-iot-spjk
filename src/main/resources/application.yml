@@ -1,0 +1,48 @@
+server:
+  port: 8099
+spring:
+  #redis??
+  redis:
+    host: 127.0.0.1
+    port: 16379
+    password:
+
+zlm:
+  secret: 035c73f7-bb6b-4889-a715-d9eb2d1925cc
+  ip: 127.0.0.1
+  rtmpUrl: rtmp://127.0.0.1/live/
+
+config:
+  # 直播流保活时间(分钟)
+  keepalive: ${CAMERASERVER_KEEPALIVE:1}
+  # nginx推送地址
+  push_host: ${CAMERASERVER_PUSH_HOST:127.0.0.1}
+  #  push_host: ${CAMERASERVER_PUSH_HOST:192.168.0.31}
+  # 额外推送地址
+  host_extra: ${CAMERASERVER_HOST_EXTRA:127.0.0.1}
+  # nginx推送端口
+  push_port: ${CAMERASERVER_PUSH_PORT:1935}
+  # m3u8服务端口
+  m3u8_port: ${CAMERASERVER_M3U8_PORT:8085}
+  # m3u8文件路径
+  m3u8_path: ${CAMERASERVER_M3U8_PSTH:D:\\nginx\\nginx-rtmp-win32\\nginx-rtmp-win32-master\\temp\\hls\\}
+  # hls分段切片间隔(分钟)
+  hls_interval: ${CAMERASERVER_HLS_INTERVAL:1}
+  # 主码流最大码率
+  main_code: ${CAMERASERVER_MAIN_CODE:5120}
+  # 子码流最大码率
+  sub_code: ${CAMERASERVER_SUB_CODE:1024}
+  # 设备码率上限
+  bitrate: ${CAMERASERVER_BITRATE:8192}
+  # sdk库文件地址
+  libpath: ${CAMERASERVER_LIBPATH:C:\Users\Administrator\Desktop\hcsdk}
+  # 编译版本信息
+  version: '@COMMIT_REV@.@BUILD_DATE@'
+  # 下载录像文件到指定目录
+  videopath: ${CAMERASERVER_VIDEOPATH:E://hcdownload//video//}
+  # 抓图到指定目录
+  picturepath: ${CAMERASERVER_PICTUREPATH:E://hcdownload//picture//}
+  # 删除服务器上的录像文件周期
+  deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0 * * ?}
+  # 删除服务器上的抓图文件周期
+  deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0 * * ?}
