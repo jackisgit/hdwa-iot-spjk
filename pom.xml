@@ -13,7 +13,7 @@
     <artifactId>iot_epc_spdj</artifactId>
     <version>${COMMIT_REV}.${BUILD_DATE}</version>
     <name>iot_epc_spdj</name>
-    <description>海康威视网络SDK对接</description>
+    <description>大华股份设备网络SDK对接</description>
 
     <properties>
         <java.version>1.8</java.version>
@@ -45,7 +45,6 @@
         </dependency>
         <!-- javacv -->
         <!-- https://mvnrepository.com/artifact/org.bytedeco/javacv -->
-        <!--JavaCV相关依赖-->
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv</artifactId>
@@ -57,8 +56,6 @@
             <version>6.0-1.5.9</version>
             <classifier>windows-x86_64-gpl</classifier>
         </dependency>
-
-
         <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -68,19 +65,14 @@
 
 
         <dependency>
-            <groupId>com.sun</groupId>  <!--自定义 -->
-            <artifactId>jna</artifactId>    <!--自定义 -->
-            <version>3.3.0</version> <!--自定义 -->
-            <scope>system</scope> <!--system，类似provided，需要显式提供依赖的jar以后，Maven就不会在Repository中查找它 -->
-            <systemPath>${basedir}/lib/jna-3.3.0.jar</systemPath> <!--项目根目录下的lib文件夹下 -->
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.12.1</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sencha.gxt</groupId>  <!--自定义 -->
-            <artifactId>examples</artifactId>    <!--自定义 -->
-            <version>3.0.9</version> <!--自定义 -->
-            <scope>system</scope> <!--system，类似provided，需要显式提供依赖的jar以后，Maven就不会在Repository中查找它 -->
-            <systemPath>${basedir}/lib/examples-3.0.9 b0.jar</systemPath> <!--项目根目录下的lib文件夹下 -->
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
 
         <dependency>
@@ -88,6 +80,7 @@
             <artifactId>hutool-all</artifactId>
             <version>5.3.3</version>
         </dependency>
+
 
         <!-- mysql数据库 -->
         <dependency>
@@ -113,12 +106,6 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>3.4.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-
 
     </dependencies>
 

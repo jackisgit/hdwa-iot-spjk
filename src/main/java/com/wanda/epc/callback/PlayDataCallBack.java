@@ -1,43 +1,46 @@
 package com.wanda.epc.callback;
 
-import com.wanda.epc.sdk.HCNetSDK.FPlayDataCallBack;
-import com.sun.jna.NativeLong;
-import com.sun.jna.ptr.ByteByReference;
+import com.netsdk.lib.NetSDKLib;
+import com.sun.jna.Pointer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PipedOutputStream;
 
 /**
+ * @author LianYanFei
  * @Title PlayDataCallBack.java
  * @description 历史回放回调函数
  * @time 2023年11月28日 下午2:44:51
- * @author LianYanFei
  **/
-public class PlayDataCallBack implements FPlayDataCallBack {
+public class PlayDataCallBack implements NetSDKLib.fDataCallBack {
 
-	private PipedOutputStream outputStream;// 管道输出流
-	private PipedOutputStream picOutputStream;// 抓图管道流
+    private final static Logger logger = LoggerFactory.getLogger(PlayDataCallBack.class);
 
-	public boolean playbackcapture = false;// 开始抓图标志 true：开始抓图 false：结束抓图
+    private PipedOutputStream outputStream;// 管道输出流
+    private PipedOutputStream picOutputStream;// 抓图管道流
 
-	public PlayDataCallBack(PipedOutputStream outputStream) {
-		this.outputStream = outputStream;
-	}
+    public boolean playbackcapture = false;// 开始抓图标志 true：开始抓图 false：结束抓图
 
-	public void setPicOutputStream(PipedOutputStream picOutputStream) {
-		this.picOutputStream = picOutputStream;
-	}
+    public PlayDataCallBack(PipedOutputStream outputStream) {
+        this.outputStream = outputStream;
+    }
 
-	@Override
-	public void invoke(NativeLong lPlayHandle, int dwDataType, ByteByReference pBuffer, int dwBufSize, int dwUser) {
-		try {
-			if (playbackcapture) {
-				// 将数据同时写入抓图管道流中
-				picOutputStream.write(pBuffer.getPointer().getByteArray(0, dwBufSize));
-			}
-			outputStream.write(pBuffer.getPointer().getByteArray(0, dwBufSize));
-		} catch (Exception e) {
-//			logger.error(e.getMessage());
-		}
-	}
+    public void setPicOutputStream(PipedOutputStream picOutputStream) {
+        this.picOutputStream = picOutputStream;
+    }
+
+    @Override
+    public int invoke(NetSDKLib.LLong lRealHandle, int dwDataType, Pointer pBuffer, int dwBufSize, Pointer dwUser) {
+        try {
+            if (dwDataType == (NetSDKLib.NET_DATA_CALL_BACK_VALUE + NetSDKLib.EM_REAL_DATA_TYPE.EM_REAL_DATA_TYPE_FLV_STREAM)) {
+                outputStream.write(pBuffer.getByteArray(0, dwBufSize));
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
+        return 0;
+    }
 
 }

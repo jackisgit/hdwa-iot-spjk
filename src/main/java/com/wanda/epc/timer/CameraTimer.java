@@ -57,8 +57,7 @@ public class CameraTimer implements CommandLineRunner {
 								CameraController.JOBMAP.get(key).setInterrupted(key);
 								logger.info("定时任务 当前设备使用人数为0结束推流 设备信息：[ip：" + CacheUtil.STREATMAP.get(key).getIp()
 										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
-										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
-										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
+										+ CacheUtil.STREATMAP.get(key).getChannel()  + " starttime:"
 										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
 										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
 										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
@@ -68,24 +67,13 @@ public class CameraTimer implements CommandLineRunner {
 								CameraController.JOBMAP.get(key).setInterrupted(key);
 								logger.info("定时任务 当前设备使用时间超时结束推流 设备信息：[ip:" + CacheUtil.STREATMAP.get(key).getIp()
 										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
-										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
-										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
+										+ CacheUtil.STREATMAP.get(key).getChannel() + " starttime:"
 										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
 										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
 										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
 							} else if (null != CacheUtil.STREATMAP.get(key).getM3u8path()
 									&& !"".equals(CacheUtil.STREATMAP.get(key).getM3u8path())
 									&& (nowtime - opentime) / 1000 / 60 >= config.getKeepalive()) {
-								// hls切片超时删除
-//								deleteDir(CacheUtil.STREATMAP.get(key).getM3u8path());
-//								logger.info("定时任务 当前设备使用时间超时清除播放文件 设备信息：[ip:" + CacheUtil.STREATMAP.get(key).getIp()
-//										+ " port:" + CacheUtil.STREATMAP.get(key).getPort() + " channel:"
-//										+ CacheUtil.STREATMAP.get(key).getChannel() + " stream:"
-//										+ CacheUtil.STREATMAP.get(key).getStream() + " starttime:"
-//										+ CacheUtil.STREATMAP.get(key).getStarttime() + " endtime:"
-//										+ CacheUtil.STREATMAP.get(key).getEndtime() + " url:"
-//										+ CacheUtil.STREATMAP.get(key).getUrl() + "]");
-//								CacheUtil.STREATMAP.remove(key);
 							}
 						} catch (ParseException e) {
 							e.printStackTrace();

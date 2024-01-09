@@ -4,7 +4,7 @@ import com.wanda.epc.cache.CacheUtil;
 import com.wanda.epc.controller.CameraController;
 import com.wanda.epc.play.RealPlay;
 import com.wanda.epc.pojo.CameraPojo;
-import com.wanda.epc.sdk.HCLoginSDK;
+import com.wanda.epc.sdk.DHLoginSDK;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,9 +23,9 @@ public class CameraThread {
 		public static ExecutorService es = Executors.newCachedThreadPool();
 
 		private CameraPojo cameraPojo;
-		private HCLoginSDK login;
+		private DHLoginSDK login;
 
-		public MyRunnable(CameraPojo cameraPojo, HCLoginSDK login) {
+		public MyRunnable(CameraPojo cameraPojo, DHLoginSDK login) {
 			this.cameraPojo = cameraPojo;
 			this.login = login;
 		}
@@ -65,12 +65,20 @@ public class CameraThread {
 				CacheUtil.LIVECALLBACK.remove(cameraPojo.getToken());
 				CameraController.JOBMAP.remove(cameraPojo.getToken());
 				// 判断当前设备使用人数,如果人数>1,则-1;否则注销当前设备
-				if (CacheUtil.LOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
-					CacheUtil.LOGINSDK.get(cameraPojo.getIp())
-							.setCount(CacheUtil.LOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
+				if (CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
+					CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp())
+							.setCount(CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
 				} else {
-					CacheUtil.LOGINSDK.get(cameraPojo.getIp()).logout();
-					CacheUtil.LOGINSDK.remove(cameraPojo.getIp());
+					CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).logout();
+					CacheUtil.REALPLAYLOGINSDK.remove(cameraPojo.getIp());
+				}
+
+				if (CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
+					CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp())
+							.setCount(CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
+				} else {
+					CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).logout();
+					CacheUtil.PLAYBACKLOGINSDK.remove(cameraPojo.getIp());
 				}
 			}
 		}

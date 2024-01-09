@@ -50,7 +50,7 @@ public class DeviceInfo {
     private String channel;
 
     /**
-     * 厂商类型 dahua  hikvision
+     * 厂商类型 dahua  hikvsion
      */
     @TableField(value = "tradType")
     private String tradType;
@@ -66,7 +66,6 @@ public class DeviceInfo {
      */
     @TableField(value = "cameraName")
     private String cameraName;
-
 
 
 
