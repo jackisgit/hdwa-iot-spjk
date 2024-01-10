@@ -349,17 +349,17 @@ public class CameraController {
             rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/history/"
                     + token;
             if (config.getHost_extra().equals("127.0.0.1")) {
-                url = "http://" + projectIp + ":8080/history/" + token + ".m3u8";
+                url = "http://" + projectIp + ":8081/history/" + token + "/hls.m3u8";
             } else {
-                url = "http://" + projectIp + ":8080/history/" + token + ".m3u8";
+                url = "http://" + projectIp + ":8081/history/" + token + "/hls.m3u8";
             }
         } else {// 直播
             rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/live/"
                     + token;
             if (config.getHost_extra().equals("127.0.0.1")) {
-                url = "http://" + projectIp + ":8080/live/" + token + ".m3u8";
+                url = "http://" + projectIp + ":8081/live/" + token + "/hls.m3u8";
             } else {
-                url = "http://" + projectIp + ":8080/live/" + token + ".m3u8";
+                url = "http://" + projectIp + ":8081/live/" + token + "/hls.m3u8";
             }
         }
 
