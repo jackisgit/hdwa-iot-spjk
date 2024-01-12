@@ -1,6 +1,9 @@
 package com.wanda.epc.callback;
 
+import cn.hutool.core.util.RandomUtil;
 import com.netsdk.lib.NetSDKLib;
+import com.sun.jna.CallbackThreadInitializer;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,8 @@ public class PlayDataCallBack implements NetSDKLib.fDataCallBack {
     public boolean playbackcapture = false;// 开始抓图标志 true：开始抓图 false：结束抓图
 
     public PlayDataCallBack(PipedOutputStream outputStream) {
+        //这里是关键，默认回调是一个数据包产生一个线程，因为管道的机制，第一次写入和读取的线程会和管道绑定，如果线程G了管道也会关闭会出现 Write end dead \ Pipe closed错误，所以设置一个线程回调解决这个错误问题，如果不想设置这里可以用队列来解决，这里不详细阐述
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "DahuaPlaybackStream-" + RandomUtil.randomNumbers(8)));
         this.outputStream = outputStream;
     }
 

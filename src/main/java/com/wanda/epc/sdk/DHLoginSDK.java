@@ -60,6 +60,19 @@ public class DHLoginSDK {
 
     }
 
+    public boolean logoutBack(NetSDKLib.LLong playbackLoginHandle) {
+        if (netSdk.CLIENT_Logout(this.m_hLoginHandle)) {
+            this.isLogin = false;
+            return true;
+        } else {
+            this.errorcode = netSdk.CLIENT_GetLastError();
+            logger.error("dhsdk 注销设备出错,错误码:" + errorcode);
+            return false;
+        }
+
+
+    }
+
     /**
      * @return errorcode
      * @Title: getErrorcode

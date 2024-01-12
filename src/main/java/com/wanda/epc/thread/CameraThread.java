@@ -65,20 +65,12 @@ public class CameraThread {
 				CacheUtil.LIVECALLBACK.remove(cameraPojo.getToken());
 				CameraController.JOBMAP.remove(cameraPojo.getToken());
 				// 判断当前设备使用人数,如果人数>1,则-1;否则注销当前设备
-				if (CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
-					CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp())
-							.setCount(CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
+				if (CacheUtil.LOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
+					CacheUtil.LOGINSDK.get(cameraPojo.getIp())
+							.setCount(CacheUtil.LOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
 				} else {
-					CacheUtil.REALPLAYLOGINSDK.get(cameraPojo.getIp()).logout();
-					CacheUtil.REALPLAYLOGINSDK.remove(cameraPojo.getIp());
-				}
-
-				if (CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).getCount() > 1) {
-					CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp())
-							.setCount(CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).getCount() - 1);
-				} else {
-					CacheUtil.PLAYBACKLOGINSDK.get(cameraPojo.getIp()).logout();
-					CacheUtil.PLAYBACKLOGINSDK.remove(cameraPojo.getIp());
+					CacheUtil.LOGINSDK.get(cameraPojo.getIp()).logout();
+					CacheUtil.LOGINSDK.remove(cameraPojo.getIp());
 				}
 			}
 		}

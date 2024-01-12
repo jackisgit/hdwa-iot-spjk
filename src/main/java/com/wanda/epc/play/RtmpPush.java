@@ -109,7 +109,7 @@ public class RtmpPush {
 		try {
 			inputStream.close();
 			outputStream.close();
-			Utils.sdkRelease(sdkHandle, playSign);
+//			Utils.sdkRelease(sdkHandle, playSign);
 			grabber.stop();
 			grabber.close();
 			if (recorder != null) {
@@ -164,7 +164,7 @@ public class RtmpPush {
 			} else {
 				framerate = 25.0;
 			}
-			recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), grabber.getImageHeight());
+			recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), (grabber.getImageWidth()/16)*9);
 			recorder.setFormat("flv");
 			recorder.setInterleaved(true);
 			recorder.setVideoOption("preset", "ultrafast");
@@ -173,8 +173,17 @@ public class RtmpPush {
 			recorder.setSampleRate(grabber.getSampleRate());
 			recorder.setFrameRate(framerate);
 			recorder.setVideoBitrate(bitrate);
+			logger.debug("dahua 开始推流 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort() + " channel:"
+					+ pojo.getChannel() + " starttime:" + pojo.getStarttime()
+					+ " endtime:" + pojo.getEndtime() + " url:" + pojo.getUrl() + "]");
+			// 清空探测时留下的缓存
 			//h264只需要转封装
 			if (grabber.getVideoCodec() == avcodec.AV_CODEC_ID_H264) {
+				if (grabber.getAudioChannels() > 0) {
+					recorder.setAudioChannels(grabber.getAudioChannels());
+					recorder.setAudioBitrate(grabber.getAudioBitrate());
+					recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+				}
 				recorder.start(grabber.getFormatContext());
 				while ((avPacket = grabber.grabPacket()) != null) {
 					recorder.recordPacket(avPacket);

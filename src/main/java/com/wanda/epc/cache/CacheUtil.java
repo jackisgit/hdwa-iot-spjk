@@ -28,13 +28,9 @@ public class CacheUtil {
     /*
      * 保存设备预览注册句柄
      */
-    public static Map<String, DHLoginSDK> REALPLAYLOGINSDK = new ConcurrentHashMap<>();
+    public static Map<String, DHLoginSDK> LOGINSDK = new ConcurrentHashMap<>();
 
 
-    /*
-     * 保存设备回放注册句柄
-     */
-    public static Map<String, DHLoginSDK> PLAYBACKLOGINSDK = new ConcurrentHashMap<>();
 
 
     /*
@@ -91,7 +87,7 @@ public class CacheUtil {
     /*
      * 回放登录句柄
      */
-    public static Map<String, NetSDKLib.LLong> PLAY_BACK_LOGIN_MODULE = new ConcurrentHashMap<>();
+    public static Map<String, DHLoginSDK> PLAY_BACK_LOGIN_MODULE = new ConcurrentHashMap<>();
 
 
     /*

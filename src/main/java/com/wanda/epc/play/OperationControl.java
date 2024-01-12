@@ -46,26 +46,32 @@ public class OperationControl {
         NetSDKLib.NET_RECORDFILE_INFO[] numberFile = (NetSDKLib.NET_RECORDFILE_INFO[]) new NetSDKLib.NET_RECORDFILE_INFO().toArray(nFileCount);
         int maxlen = nFileCount * numberFile[0].size();
         IntByReference outFileCoutReference = new IntByReference(0);
-
-        DHLoginSDK loginSDK = new DHLoginSDK();
-        loginSDK.login(pojo);
-        if (loginSDK.getIsLogin()) {
-            boolean cRet = NetSDKLib.NETSDK_INSTANCE.CLIENT_QueryRecordFile(loginSDK.getLUserID(), Integer.parseInt(pojo.getChannel()), 0, start_time, end_time, null, numberFile, maxlen, outFileCoutReference, 5000, false);
-            if (cRet) {
-                CacheUtil.FIND_FILE_LOGIN_MODULE.put(pojo.getIp().concat("_findFileLogin"), loginSDK.getLUserID());
-                logger.info("QueryRecordFile  Succeed! " + "查询到的视频个数：{}, 码流类型：{}", outFileCoutReference.getValue(), numberFile[0].bRecType);
-                for (int i = 0; i < outFileCoutReference.getValue(); i++) {
-                    DahuaPlayBackListDto dahuaPlayBackListDto = new DahuaPlayBackListDto();
-                    NetSDKLib.NET_TIME starttime = numberFile[i].starttime;
-                    NetSDKLib.NET_TIME endtime = numberFile[i].endtime;
-                    dahuaPlayBackListDto.setBeginTime(operationTime(starttime.dwYear + "-" + starttime.dwMonth + "-" + starttime.dwDay + " " + starttime.dwHour + ":" + starttime.dwMinute + ":" + starttime.dwSecond));
-                    dahuaPlayBackListDto.setEndTime(operationTime(endtime.dwYear + "-" + endtime.dwMonth + "-" + endtime.dwDay + " " + endtime.dwHour + ":" + endtime.dwMinute + ":" + endtime.dwSecond));
-                    dahuaPlayBackListDto.setSize(numberFile[i].size);
-                    list.add(dahuaPlayBackListDto);
-                }
-            } else {
-                logger.error("查询文件失败{}", ToolKits.getErrorCode());
+        DHLoginSDK loginSDK = null;
+        if (CacheUtil.LOGINSDK.containsKey(pojo.getIp())) {
+            loginSDK = CacheUtil.LOGINSDK.get(pojo.getIp());
+        } else {
+            loginSDK = new DHLoginSDK();
+            loginSDK.login(pojo);
+            if (!loginSDK.getIsLogin()) {
+                logger.info("查找文件登录设备失败");
+                return null;
             }
+        }
+        boolean cRet = NetSDKLib.NETSDK_INSTANCE.CLIENT_QueryRecordFile(loginSDK.getLUserID(), Integer.parseInt(pojo.getChannel()), 0, start_time, end_time, null, numberFile, maxlen, outFileCoutReference, 10000, false);
+        if (cRet) {
+            CacheUtil.FIND_FILE_LOGIN_MODULE.put(pojo.getIp().concat("_findFileLogin"), loginSDK.getLUserID());
+            logger.info("QueryRecordFile  Succeed! " + "查询到的视频个数：{}, 码流类型：{}", outFileCoutReference.getValue(), numberFile[0].bRecType);
+            for (int i = 0; i < outFileCoutReference.getValue(); i++) {
+                DahuaPlayBackListDto dahuaPlayBackListDto = new DahuaPlayBackListDto();
+                NetSDKLib.NET_TIME starttime = numberFile[i].starttime;
+                NetSDKLib.NET_TIME endtime = numberFile[i].endtime;
+                dahuaPlayBackListDto.setBeginTime(operationTime(starttime.dwYear + "-" + starttime.dwMonth + "-" + starttime.dwDay + " " + starttime.dwHour + ":" + starttime.dwMinute + ":" + starttime.dwSecond));
+                dahuaPlayBackListDto.setEndTime(operationTime(endtime.dwYear + "-" + endtime.dwMonth + "-" + endtime.dwDay + " " + endtime.dwHour + ":" + endtime.dwMinute + ":" + endtime.dwSecond));
+                dahuaPlayBackListDto.setSize(numberFile[i].size);
+                list.add(dahuaPlayBackListDto);
+            }
+        } else {
+            logger.error("查询文件失败{}", ToolKits.getErrorCode());
         }
         return list;
     }
@@ -78,7 +84,7 @@ public class OperationControl {
         try {
             Date date = inputFormat.parse(irregularDate);
             String formattedDate = outputFormat.format(date);
-           return formattedDate;
+            return formattedDate;
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -132,13 +138,13 @@ public class OperationControl {
     /**
      * 变焦-
      */
-    public  boolean ptzControlFocusDecStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam2) {
+    public boolean ptzControlFocusDecStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam2) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_FOCUS_DEC_CONTROL,
                 0, lParam2, 0, 0);
     }
 
-    public  boolean ptzControlFocusDecEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
+    public boolean ptzControlFocusDecEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_FOCUS_DEC_CONTROL,
                 0, 0, 0, 1);
@@ -147,13 +153,13 @@ public class OperationControl {
     /**
      * 向上
      */
-    public  boolean ptzControlUpStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
+    public boolean ptzControlUpStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_UP_CONTROL,
                 lParam1, lParam2, 0, 0);
     }
 
-    public  boolean ptzControlUpEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
+    public boolean ptzControlUpEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_UP_CONTROL,
                 0, 0, 0, 1);
@@ -162,13 +168,13 @@ public class OperationControl {
     /**
      * 向下
      */
-    public  boolean ptzControlDownStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
+    public boolean ptzControlDownStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_DOWN_CONTROL,
                 lParam1, lParam2, 0, 0);
     }
 
-    public  boolean ptzControlDownEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
+    public boolean ptzControlDownEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_DOWN_CONTROL,
                 0, 0, 0, 1);
@@ -177,13 +183,13 @@ public class OperationControl {
     /**
      * 向左
      */
-    public  boolean ptzControlLeftStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
+    public boolean ptzControlLeftStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_LEFT_CONTROL,
                 lParam1, lParam2, 0, 0);
     }
 
-    public  boolean ptzControlLeftEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
+    public boolean ptzControlLeftEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_LEFT_CONTROL,
                 0, 0, 0, 1);
@@ -192,13 +198,13 @@ public class OperationControl {
     /**
      * 向右
      */
-    public  boolean ptzControlRightStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
+    public boolean ptzControlRightStart(NetSDKLib.LLong m_hLoginHandle, int nChannelID, int lParam1, int lParam2) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_RIGHT_CONTROL,
                 lParam1, lParam2, 0, 0);
     }
 
-    public  boolean ptzControlRightEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
+    public boolean ptzControlRightEnd(NetSDKLib.LLong m_hLoginHandle, int nChannelID) {
         return NetSDKLib.NETSDK_INSTANCE.CLIENT_DHPTZControlEx(m_hLoginHandle, nChannelID,
                 NetSDKLib.NET_PTZ_ControlType.NET_PTZ_RIGHT_CONTROL,
                 0, 0, 0, 1);
