@@ -209,7 +209,7 @@ public class RtmpPush {
 		} finally {
 			release();
 			if (exitcode == 2) {
-				logger.info("hcsdk 开始重连 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort() + " channel:"
+				logger.info("dahua 开始重连 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort() + " channel:"
 						+ pojo.getChannel()  + " starttime:" + pojo.getStarttime()
 						+ " endtime:" + pojo.getEndtime() + " url:" + pojo.getUrl() + "]");
 			} else {

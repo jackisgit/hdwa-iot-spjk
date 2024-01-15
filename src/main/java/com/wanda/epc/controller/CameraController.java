@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.netsdk.lib.NetSDKLib;
+import com.netsdk.lib.ToolKits;
 import com.wanda.epc.cache.CacheUtil;
 import com.wanda.epc.config.Config;
 import com.wanda.epc.entity.DeviceInfo;
@@ -21,6 +22,7 @@ import com.wanda.epc.pojo.DahuaDeviceDto;
 import com.wanda.epc.pojo.DahuaPlayBackListDto;
 import com.wanda.epc.request.DahuaControllingRequest;
 import com.wanda.epc.request.DahuaPlaybackRequest;
+import com.wanda.epc.sdk.DHInitSDK;
 import com.wanda.epc.sdk.DHLoginSDK;
 import com.wanda.epc.thread.CameraThread;
 import com.wanda.epc.util.ResultUtil;
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -64,8 +67,48 @@ public class CameraController {
     @Autowired
     private DeviceInfoMapper deviceInfoMapper;
 
+
+    @Value("${ip}")
+    private String ip;
+
+    /*
+     * 初始化sdk
+     */
+    @Autowired
+    public DHInitSDK init;
+
     @Value("${projectIp}")
     private String projectIp;
+
+    @PostConstruct
+    public void init() {
+        init.init();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        DHLoginSDK loginSDK = null;
+        String[] ipStr = ip.split(",");
+        List<String> ipList = Arrays.asList(ipStr);
+        loginSDK = new DHLoginSDK();
+        if (!org.springframework.util.CollectionUtils.isEmpty(ipList)) {
+            for (String add : ipList) {
+                String[] split = add.split(":");
+                CameraPojo pojo = new CameraPojo();
+                pojo.setIp(split[0]);
+                pojo.setUsername(split[1]);
+                pojo.setPassword(split[2]);
+                loginSDK.login(pojo);
+                if (loginSDK.getIsLogin()) {
+                    CacheUtil.LOGINSDK.put(pojo.getIp(), loginSDK);
+                } else {
+                    logger.error("IP：{} account;{} password:{} 登录失败：{}", pojo.getIp(), pojo.getUsername(), pojo.getPassword(), ToolKits.getErrorCode());
+                }
+            }
+        }
+    }
 
 
     /*
@@ -144,7 +187,8 @@ public class CameraController {
      * @return: void
      **/
     @PostMapping(value = "/hisList")
-    public ResultUtil<List<DahuaPlayBackListDto>> historyList(@RequestBody DahuaPlaybackRequest request) throws InterruptedException {
+    public ResultUtil<List<DahuaPlayBackListDto>> historyList(@RequestBody DahuaPlaybackRequest request) throws
+            InterruptedException {
         LambdaQueryWrapper<DeviceInfo> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DeviceInfo::getEqId, request.getEqId());
         DeviceInfo deviceInfo = deviceInfoMapper.selectOne(queryWrapper);
@@ -168,27 +212,27 @@ public class CameraController {
 
     @PostMapping("/controlling")
     public ResultUtil<DahuaCameraDto> controlling(@RequestBody DahuaControllingRequest request) {
-
         LambdaQueryWrapper<DeviceInfo> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DeviceInfo::getEqId, request.getEqId());
         DeviceInfo deviceInfo = deviceInfoMapper.selectOne(queryWrapper);
         if (Objects.nonNull(deviceInfo)) {
             OperationControl operationControl = new OperationControl();
-            NetSDKLib.LLong realPlayLogin = CacheUtil.REAL_PLAY_LOGIN_MODULE.get(deviceInfo.getIp().concat("_realPlayLogin"));
-            if (realPlayLogin.longValue() == 0) {
-                DHLoginSDK loginSDK = new DHLoginSDK();
-                CameraPojo cameraPojo = new CameraPojo();
-                cameraPojo.setIp(deviceInfo.getIp());
-                cameraPojo.setUsername(deviceInfo.getAccount());
-                cameraPojo.setUsername(cameraPojo.getUsername());
-                cameraPojo.setPort(deviceInfo.getPort());
-                cameraPojo.setChannel(deviceInfo.getChannel());
-                boolean login = loginSDK.login(cameraPojo);
-                if (login) {
-                    realPlayLogin = loginSDK.getLUserID();
+            DHLoginSDK dhLoginSDK = CacheUtil.LOGINSDK.get(deviceInfo.getIp());
+            CameraPojo cameraPojo = new CameraPojo();
+            cameraPojo.setIp(deviceInfo.getIp());
+            cameraPojo.setUsername(deviceInfo.getAccount());
+            cameraPojo.setUsername(cameraPojo.getUsername());
+            cameraPojo.setPort(deviceInfo.getPort());
+            cameraPojo.setChannel(deviceInfo.getChannel());
+            NetSDKLib.LLong realPlayLogin = null;
+            if (dhLoginSDK.getIsLogin()) {
+                realPlayLogin = dhLoginSDK.getLUserID();
+            } else {
+                dhLoginSDK = new DHLoginSDK();
+                if (dhLoginSDK.getIsLogin()) {
+                    realPlayLogin = dhLoginSDK.getLUserID();
                 }
             }
-
             if (StrUtil.equals(request.getCommand(), "UP")) {
                 if (request.getAction() == 0) {
                     operationControl.ptzControlUpStart(realPlayLogin, Integer.parseInt(deviceInfo.getChannel()), 0, 5);
@@ -237,14 +281,13 @@ public class CameraController {
      * @Description:开启视频流
      **/
     public Map<String, Object> openRealCamera(CameraPojo pojo) {
+        DHLoginSDK login = null;// 设备注册信息
         // 返回结果
         Map<String, Object> map = new LinkedHashMap<>();
         // openStream返回结果
-        Map<String, Object> openMap = new HashMap<>();
         logger.info("请求参数：{}", JSON.toJSONString(pojo));
         // 获取当前时间
         String opentime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime());
-
         String streamId = pojo.getIp() + pojo.getChannel();
         Boolean media = getMediaList(streamId);
         if (media) {
@@ -255,50 +298,111 @@ public class CameraController {
             map.put("msg", "视频流已注册打开成功");
             map.put("code", 0);
         } else {
-            openMap = openStream(pojo.getIp(), pojo.getPort(), pojo.getUsername(), pojo.getPassword(), pojo.getChannel(), pojo.getStarttime(), pojo.getEndtime(), opentime, streamId);
-            if (Integer.parseInt(openMap.get("errorcode").toString()) == 0) {
-                map.put("url", ((CameraPojo) openMap.get("pojo")).getUrl());
-                map.put("token", ((CameraPojo) openMap.get("pojo")).getToken());
-                map.put("msg", "打开视频流成功");
-                map.put("code", 0);
+            String rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/live/" + streamId;
+            String url = "http://".concat(projectIp).concat(":8081/live/").concat(streamId).concat("/hls.m3u8");
+            pojo.setOpentime(opentime);
+            pojo.setRtmp(rtmp);
+            pojo.setUrl(url);
+            // 注册设备
+            if (CacheUtil.LOGINSDK.containsKey(pojo.getIp())) {
+                // 设备已经注册过
+                // 使用人数+1
+                CacheUtil.LOGINSDK.get(pojo.getIp()).setCount(CacheUtil.LOGINSDK.get(pojo.getIp()).getCount() + 1);
+                login = CacheUtil.LOGINSDK.get(pojo.getIp());
             } else {
-                map.put("msg", openMap.get("message"));
-                map.put("code", openMap.get("errorcode"));
+                login = new DHLoginSDK();
+                login.login(pojo);
+                if (login.getIsLogin()) {
+                    // 设备注册成功
+                    logger.info("hcsdk 设备注册成功 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort()
+                            + " username:" + pojo.getUsername() + " password:" + pojo.getPassword()
+                            + " channel:" + pojo.getChannel() + "]");
+                    // 使用人数+1
+                    login.setCount(login.getCount() + 1);
+                    CacheUtil.LOGINSDK.put(pojo.getIp(), login);
+                } else {
+                    logger.error("大华预览设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + pojo.getIp()
+                            + " port:" + pojo.getPort() + " username:" + pojo.getUsername() + " password:"
+                            + pojo.getPassword() + " channel:" + pojo.getChannel() + " stream:" + "]");
+                    map.put("pojo", pojo);
+                    if (login.getErrorCode() == 7) {
+                        map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
+                        map.put("errorcode", 7);
+                    } else {
+                        map.put("message", "其他错误");
+                        map.put("errorcode", 6);
+                    }
+                    return map;
+                }
+                // 执行推流任务
+                CameraThread.MyRunnable job = new CameraThread.MyRunnable(pojo, login);
+                CameraThread.MyRunnable.es.execute(job);
+                JOBMAP.put(streamId, job);
+                map.put("pojo", pojo);
+                map.put("errorcode", login.getErrorCode());
+                map.put("message", "打开视频流成功");
             }
         }
         return map;
     }
 
     public Map<String, Object> openPlaybackCamera(CameraPojo pojo) {
-        // 返回结果
+        DHLoginSDK login = null;// 设备注册信息
         Map<String, Object> map = new LinkedHashMap<>();
-        // openStream返回结果
-        Map<String, Object> openMap = new HashMap<>();
-        logger.info("请求参数：{}", JSON.toJSONString(pojo));
-        // 获取当前时间
         String opentime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime());
-        // 获取当前时间
-        String startTime = date(pojo.getStarttime());
-        String endTme = date(pojo.getEndtime());
-        String streamId = pojo.getIp() + pojo.getChannel() + startTime + endTme + "_history";
+        String streamId = pojo.getIp() + pojo.getChannel();
         Boolean media = getMediaList(streamId);
-        if (media && StringUtils.isBlank(pojo.getStarttime())) {
-            logger.info("回放视频流已存在,直接获取");
+        if (media) {
+            logger.info("预览视频流已存在,直接获取");
             String hlsUrl = "http://".concat(projectIp).concat(":8081/history/").concat(streamId).concat("/hls.m3u8");
             map.put("url", hlsUrl);
             map.put("token", streamId);
             map.put("msg", "视频流已注册打开成功");
             map.put("code", 0);
         } else {
-            openMap = openStream(pojo.getIp(), pojo.getPort(), pojo.getUsername(), pojo.getPassword(), pojo.getChannel(), pojo.getStarttime(), pojo.getEndtime(), opentime, streamId);
-            if (Integer.parseInt(openMap.get("errorcode").toString()) == 0) {
-                map.put("url", ((CameraPojo) openMap.get("pojo")).getUrl());
-                map.put("token", ((CameraPojo) openMap.get("pojo")).getToken());
-                map.put("msg", "打开视频流成功");
-                map.put("code", 0);
+            String rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/history/" + streamId;
+            String url = "http://".concat(projectIp).concat(":8081/history/").concat(streamId).concat("/hls.m3u8");
+            pojo.setOpentime(opentime);
+            pojo.setRtmp(rtmp);
+            pojo.setUrl(url);
+            // 注册设备
+            if (CacheUtil.PLAY_BACK_LOGIN_MODULE.containsKey(pojo.getIp())) {
+                login = CacheUtil.PLAY_BACK_LOGIN_MODULE.get(pojo.getIp());
+                NetSDKLib.LLong lUserID = login.getLUserID();
+                boolean result = login.logoutBack(lUserID);
+                logger.info("回放注销登录句柄结果：{}", result);
             } else {
-                map.put("msg", openMap.get("message"));
-                map.put("code", openMap.get("errorcode"));
+                login = new DHLoginSDK();
+                login.login(pojo);
+                if (login.getIsLogin()) {
+                    // 设备注册成功
+                    logger.info("大华回放设备注册成功 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort()
+                            + " username:" + pojo.getUsername() + " password:" + pojo.getPassword()
+                            + " channel:" + pojo.getChannel() + "]");
+                    // 使用人数+1
+                    login.setCount(login.getCount() + 1);
+                    CacheUtil.PLAY_BACK_LOGIN_MODULE.put(pojo.getIp(), login);
+                } else {
+                    logger.error("大华回放设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + pojo.getIp()
+                            + " port:" + pojo.getPort() + " username:" + pojo.getUsername() + " password:"
+                            + pojo.getPassword() + " channel:" + pojo.getChannel() + " stream:" + "]");
+                    map.put("pojo", pojo);
+                    if (login.getErrorCode() == 7) {
+                        map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
+                        map.put("errorcode", 7);
+                    } else {
+                        map.put("message", "其他错误");
+                        map.put("errorcode", 6);
+                    }
+                    return map;
+                }
+                // 执行推流任务
+                CameraThread.MyRunnable job = new CameraThread.MyRunnable(pojo, login);
+                CameraThread.MyRunnable.es.execute(job);
+                JOBMAP.put(streamId, job);
+                map.put("pojo", pojo);
+                map.put("errorcode", login.getErrorCode());
+                map.put("message", "打开视频流成功");
             }
         }
         return map;
@@ -357,96 +461,97 @@ public class CameraController {
      * @Title: openStream
      * @Description:注册设备，拼接rtmp命令
      **/
-    private Map<String, Object> openStream(String ip, String port, String username, String password, String channel, String starttime, String endtime, String opentime, String token) {
-        Map<String, Object> map = new HashMap<>();
-        CameraPojo cameraPojo = new CameraPojo();
-        String url = "";
-        String Ip = Utils.IpConvert(ip);
-        String rtmp = "";
-        DHLoginSDK login = null;// 设备注册信息
-        if (null != starttime && !"".equals(starttime)) {// 回放
-            if (null != endtime && !"".equals(endtime)) {// 存在结束时间
-                cameraPojo.setStarttime(starttime);
-                cameraPojo.setEndtime(endtime);
-            } else {
-                cameraPojo.setStarttime(Utils.getStarttime(starttime));
-                cameraPojo.setEndtime(Utils.getEndtime(starttime));
-            }
-            rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/history/"
-                    + token;
-            if (config.getHost_extra().equals("127.0.0.1")) {
-                url = "http://".concat(projectIp).concat(":8081/history/").concat(token).concat("/hls.m3u8");
-            } else {
-                url = "http://".concat(projectIp).concat(":8081/history/").concat(token).concat("/hls.m3u8");
-            }
-        } else {// 直播
-            rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/live/" + token;
-            if (config.getHost_extra().equals("127.0.0.1")) {
-                url = "http://".concat(projectIp).concat(":8081/live/").concat(token).concat("/hls.m3u8");
-            } else {
-                url = "http://".concat(projectIp).concat(":8081/live/").concat(token).concat("/hls.m3u8");
-            }
-        }
-        cameraPojo.setUsername(username);
-        cameraPojo.setPassword(password);
-        cameraPojo.setIp(Ip);
-        cameraPojo.setPort(port);
-        cameraPojo.setChannel(channel);
-        cameraPojo.setRtmp(rtmp);
-        cameraPojo.setUrl(url);
-        cameraPojo.setOpentime(opentime);
-        cameraPojo.setCount(1);
-        cameraPojo.setToken(token);
-        try {
-            // 注册设备
-            if (CacheUtil.LOGINSDK.containsKey(Ip)) {
-                // 设备已经注册过
-                // 使用人数+1
-                CacheUtil.LOGINSDK.get(Ip).setCount(CacheUtil.LOGINSDK.get(Ip).getCount() + 1);
-                login = CacheUtil.LOGINSDK.get(Ip);
-            } else {
-                login = new DHLoginSDK();
-                login.login(cameraPojo);
-                if (login.getIsLogin()) {
-                    // 设备注册成功
-                    logger.info("hcsdk 设备注册成功 设备信息：[ip:" + cameraPojo.getIp() + " port:" + cameraPojo.getPort()
-                            + " username:" + cameraPojo.getUsername() + " password:" + cameraPojo.getPassword()
-                            + " channel:" + cameraPojo.getChannel() + "]");
-                    // 使用人数+1
-                    login.setCount(login.getCount() + 1);
-                    CacheUtil.LOGINSDK.put(Ip, login);
-                } else {
-                    logger.error("hcsdk 设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + cameraPojo.getIp()
-                            + " port:" + cameraPojo.getPort() + " username:" + cameraPojo.getUsername() + " password:"
-                            + cameraPojo.getPassword() + " channel:" + cameraPojo.getChannel() + " stream:" + "]");
-                    map.put("pojo", cameraPojo);
-                    if (login.getErrorCode() == 7) {
-                        map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
-                        map.put("errorcode", 7);
-                    } else {
-                        map.put("message", "其他错误");
-                        map.put("errorcode", 6);
-                    }
-                    return map;
-                }
-            }
-            // 执行推流任务
-            CameraThread.MyRunnable job = new CameraThread.MyRunnable(cameraPojo, login);
-            CameraThread.MyRunnable.es.execute(job);
-            JOBMAP.put(token, job);
-
-            map.put("pojo", cameraPojo);
-            map.put("errorcode", login.getErrorCode());
-            map.put("message", "打开视频流成功");
-        } catch (Exception e) {
-            logger.error("与推流IP:" + config.getPush_host() + " 端口: " + config.getPush_port() + " 建立连接失败,请检查zlm服务");
-            map.put("pojo", cameraPojo);
-            map.put("errorcode", 8);
-            map.put("message",
-                    "与推流IP:" + config.getPush_host() + " 端口: " + config.getPush_port() + " 建立连接失败,请检查zlm服务");
-        }
-        return map;
-    }
+//    private Map<String, Object> openStream(String ip, String port, String username, String password, String
+//            channel, String starttime, String endtime, String opentime, String token) {
+//        Map<String, Object> map = new HashMap<>();
+//        CameraPojo cameraPojo = new CameraPojo();
+//        String url = "";
+//        String Ip = Utils.IpConvert(ip);
+//        String rtmp = "";
+//        DHLoginSDK login = null;// 设备注册信息
+//        if (null != starttime && !"".equals(starttime)) {// 回放
+//            if (null != endtime && !"".equals(endtime)) {// 存在结束时间
+//                cameraPojo.setStarttime(starttime);
+//                cameraPojo.setEndtime(endtime);
+//            } else {
+//                cameraPojo.setStarttime(Utils.getStarttime(starttime));
+//                cameraPojo.setEndtime(Utils.getEndtime(starttime));
+//            }
+//            rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/history/"
+//                    + token;
+//            if (config.getHost_extra().equals("127.0.0.1")) {
+//                url = "http://".concat(projectIp).concat(":8081/history/").concat(token).concat("/hls.m3u8");
+//            } else {
+//                url = "http://".concat(projectIp).concat(":8081/history/").concat(token).concat("/hls.m3u8");
+//            }
+//        } else {// 直播
+//            rtmp = "rtmp://" + Utils.IpConvert(config.getPush_host()) + ":" + config.getPush_port() + "/live/" + token;
+//            if (config.getHost_extra().equals("127.0.0.1")) {
+//                url = "http://".concat(projectIp).concat(":8081/live/").concat(token).concat("/hls.m3u8");
+//            } else {
+//                url = "http://".concat(projectIp).concat(":8081/live/").concat(token).concat("/hls.m3u8");
+//            }
+//        }
+//        cameraPojo.setUsername(username);
+//        cameraPojo.setPassword(password);
+//        cameraPojo.setIp(Ip);
+//        cameraPojo.setPort(port);
+//        cameraPojo.setChannel(channel);
+//        cameraPojo.setRtmp(rtmp);
+//        cameraPojo.setUrl(url);
+//        cameraPojo.setOpentime(opentime);
+//        cameraPojo.setCount(1);
+//        cameraPojo.setToken(token);
+//        try {
+//            // 注册设备
+//            if (CacheUtil.LOGINSDK.containsKey(Ip)) {
+//                // 设备已经注册过
+//                // 使用人数+1
+//                CacheUtil.LOGINSDK.get(Ip).setCount(CacheUtil.LOGINSDK.get(Ip).getCount() + 1);
+//                login = CacheUtil.LOGINSDK.get(Ip);
+//            } else {
+//                login = new DHLoginSDK();
+//                login.login(cameraPojo);
+//                if (login.getIsLogin()) {
+//                    // 设备注册成功
+//                    logger.info("hcsdk 设备注册成功 设备信息：[ip:" + cameraPojo.getIp() + " port:" + cameraPojo.getPort()
+//                            + " username:" + cameraPojo.getUsername() + " password:" + cameraPojo.getPassword()
+//                            + " channel:" + cameraPojo.getChannel() + "]");
+//                    // 使用人数+1
+//                    login.setCount(login.getCount() + 1);
+//                    CacheUtil.LOGINSDK.put(Ip, login);
+//                } else {
+//                    logger.error("hcsdk 设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + cameraPojo.getIp()
+//                            + " port:" + cameraPojo.getPort() + " username:" + cameraPojo.getUsername() + " password:"
+//                            + cameraPojo.getPassword() + " channel:" + cameraPojo.getChannel() + " stream:" + "]");
+//                    map.put("pojo", cameraPojo);
+//                    if (login.getErrorCode() == 7) {
+//                        map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
+//                        map.put("errorcode", 7);
+//                    } else {
+//                        map.put("message", "其他错误");
+//                        map.put("errorcode", 6);
+//                    }
+//                    return map;
+//                }
+//            }
+//            // 执行推流任务
+//            CameraThread.MyRunnable job = new CameraThread.MyRunnable(cameraPojo, login);
+//            CameraThread.MyRunnable.es.execute(job);
+//            JOBMAP.put(token, job);
+//
+//            map.put("pojo", cameraPojo);
+//            map.put("errorcode", login.getErrorCode());
+//            map.put("message", "打开视频流成功");
+//        } catch (Exception e) {
+//            logger.error("与推流IP:" + config.getPush_host() + " 端口: " + config.getPush_port() + " 建立连接失败,请检查zlm服务");
+//            map.put("pojo", cameraPojo);
+//            map.put("errorcode", 8);
+//            map.put("message",
+//                    "与推流IP:" + config.getPush_host() + " 端口: " + config.getPush_port() + " 建立连接失败,请检查zlm服务");
+//        }
+//        return map;
+//    }
 
     /**
      * @param tokens
