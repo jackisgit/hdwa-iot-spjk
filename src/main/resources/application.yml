@@ -16,7 +16,7 @@ config:
 # m3u8服务端口
   m3u8_port: ${CAMERASERVER_M3U8_PORT:8085}
 # m3u8文件路径
-  m3u8_path: ${CAMERASERVER_M3U8_PSTH:D:\\nginx\\nginx-rtmp-win32\\nginx-rtmp-win32-master\\temp\\hls\\}
+  m3u8_path: ${CAMERASERVER_M3U8_PSTH:E:\\nginx\\nginx-rtmp-win32\\nginx-rtmp-win32-master\\temp\\hls\\}
 # hls分段切片间隔(分钟)
   hls_interval: ${CAMERASERVER_HLS_INTERVAL:1}
 # 主码流最大码率
@@ -30,9 +30,9 @@ config:
 # 编译版本信息
   version: '@COMMIT_REV@.@BUILD_DATE@'
 # 下载录像文件到指定目录
-  videopath: ${CAMERASERVER_VIDEOPATH:E://hcdownload//video//}
+  videopath: ${CAMERASERVER_VIDEOPATH:E:\wanda\zlm-win-x86_64\www\live}
 # 抓图到指定目录
-  picturepath: ${CAMERASERVER_PICTUREPATH:E://hcdownload//picture//}
+  picturepath: ${CAMERASERVER_PICTUREPATH:E:\wanda\zlm-win-x86_64\www\history}
 # 删除服务器上的录像文件周期
   deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0 * * ?}
 # 删除服务器上的抓图文件周期
