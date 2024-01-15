@@ -1,8 +1,8 @@
 server:
   port: ${CAMERASERVER_SERVER_PORT:9888}
   servlet:
-   context-path: /camera  
-   
+   context-path: /camera
+
 config:
 # 直播流保活时间(分钟)
   keepalive: ${CAMERASERVER_KEEPALIVE:120}
@@ -22,7 +22,7 @@ config:
 # 主码流最大码率
   main_code: ${CAMERASERVER_MAIN_CODE:5120}
 # 子码流最大码率
-  sub_code: ${CAMERASERVER_SUB_CODE:1024} 
+  sub_code: ${CAMERASERVER_SUB_CODE:1024}
 # 设备码率上限
   bitrate: ${CAMERASERVER_BITRATE:8192}
 # sdk库文件地址
@@ -37,20 +37,20 @@ config:
   deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0 * * ?}
 # 删除服务器上的抓图文件周期
   deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0 * * ?}
-  
- 
+
+
 # logback
-logging: 
+logging:
   level:
     com.junction: debug
-# 将日志输出到文件    
+# 将日志输出到文件
   config: classpath:camera-log.xml
 
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/wvp?useUnicode=true&characterEncoding=UTF8&serverTimezone=PRC&useSSL=false&allowMultiQueries=true
+    url: jdbc:mysql://127.0.0.1:3306/huiyun?useUnicode=true&characterEncoding=UTF8&serverTimezone=PRC&useSSL=false&allowMultiQueries=true
     username: root
     password: wanda@1234
     druid:
