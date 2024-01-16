@@ -100,6 +100,7 @@ public class CameraController {
                 pojo.setIp(split[0]);
                 pojo.setUsername(split[1]);
                 pojo.setPassword(split[2]);
+                pojo.setPort("37777");
                 loginSDK.login(pojo);
                 if (loginSDK.getIsLogin()) {
                     CacheUtil.LOGINSDK.put(pojo.getIp(), loginSDK);
@@ -229,6 +230,7 @@ public class CameraController {
                 realPlayLogin = dhLoginSDK.getLUserID();
             } else {
                 dhLoginSDK = new DHLoginSDK();
+                dhLoginSDK.login(cameraPojo);
                 if (dhLoginSDK.getIsLogin()) {
                     realPlayLogin = dhLoginSDK.getLUserID();
                 }
@@ -367,6 +369,10 @@ public class CameraController {
             pojo.setUrl(url);
             // 注册设备
             if (CacheUtil.PLAY_BACK_LOGIN_MODULE.containsKey(pojo.getIp())) {
+                //关闭回放
+                NetSDKLib.LLong lHistoryHandle = CacheUtil.PLAY_BACK_PLAY_HANDLE.get(pojo.getIp());
+                Utils.sdkRelease(lHistoryHandle, 1);
+                //注销该IP前期登录句柄
                 login = CacheUtil.PLAY_BACK_LOGIN_MODULE.get(pojo.getIp());
                 NetSDKLib.LLong lUserID = login.getLUserID();
                 boolean result = login.logoutBack(lUserID);

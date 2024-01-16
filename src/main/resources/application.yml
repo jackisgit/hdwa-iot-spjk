@@ -1,5 +1,5 @@
 server:
-  port: ${CAMERASERVER_SERVER_PORT:9888}
+  port: ${CAMERASERVER_SERVER_PORT:9889}
   servlet:
     context-path: /camera
 
@@ -71,6 +71,6 @@ spring:
       # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
       connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=1000
       #stat-view-servlet.url-pattern: /admin/druid/*
-projectIp: 10.6.20.120
+projectIp: 10.20.12.16
 
 ip: "10.20.8.128:admin:admin,10.20.8.215:admin:admin,10.20.8.218:admin:hp123.com,10.20.8.230:admin:admin,10.20.8.231:admin:admin,10.20.8.238:admin:admin,10.20.8.239:admin:admin,10.20.8.240:admin1:admin1,10.20.8.241:admin:admin,10.20.8.242:admin:admin,10.20.8.242:admin:admin,10.20.8.253:admin:admin"

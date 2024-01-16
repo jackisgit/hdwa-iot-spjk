@@ -1,6 +1,7 @@
 package com.wanda.epc.cache;
 
 import com.netsdk.lib.NetSDKLib;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.wanda.epc.callback.PlayDataCallBack;
 import com.wanda.epc.callback.RealDataCallBack;
 import com.wanda.epc.play.HlsPush;
@@ -94,4 +95,7 @@ public class CacheUtil {
      * 文件查询登录句柄
      */
     public static Map<String, NetSDKLib.LLong> FIND_FILE_LOGIN_MODULE = new ConcurrentHashMap<>();
+
+
+    public static Map<String,NetSDKLib.LLong> PLAY_BACK_PLAY_HANDLE = new ConcurrentHashMap<>();
 }

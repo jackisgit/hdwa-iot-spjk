@@ -149,53 +149,46 @@ public class RealPlay {
 
             }
         } else {
-            NetSDKLib.LLong lUserID = new NetSDKLib.LLong(0);
-            DHLoginSDK loginSDK = new DHLoginSDK();
-            loginSDK.login(cameraPojo);
-            if (loginSDK.getIsLogin()) {
-                lUserID = loginSDK.getLUserID();
+            playSign = 1;// 历史回放标志
+            fPlayDataCallBack = new PlayDataCallBack(outputStream);
+            NetSDKLib.NET_IN_PLAYBACK_BY_DATA_TYPE stuIn = new NetSDKLib.NET_IN_PLAYBACK_BY_DATA_TYPE();
+            String[] begin = cameraPojo.getStarttime().split(" ");
+            NetSDKLib.NET_TIME start_time = handleDate(begin[0], begin[1]);
+            String[] end = cameraPojo.getEndtime().split(" ");
+            NetSDKLib.NET_TIME end_time = handleDate(end[0], end[1]);
+            stuIn.stStartTime = start_time;
+            stuIn.stStopTime = end_time;
+            stuIn.hWnd = null;        // 播放窗格
+            stuIn.dwPosUser = null;
+            stuIn.nChannelID = Integer.parseInt(cameraPojo.getChannel());
+            stuIn.fDownLoadDataCallBack = fPlayDataCallBack;
+            stuIn.dwDataUser = null;
+            stuIn.emDataType = NetSDKLib.EM_REAL_DATA_TYPE.EM_REAL_DATA_TYPE_FLV_STREAM;
+            stuIn.nPlayDirection = 0;                            // 正放
+            DHLoginSDK loginSDK = CacheUtil.PLAY_BACK_LOGIN_MODULE.get(cameraPojo.getIp());
+            NetSDKLib.NET_OUT_PLAYBACK_BY_DATA_TYPE stuOut = new NetSDKLib.NET_OUT_PLAYBACK_BY_DATA_TYPE();
+            lHisPlayHandle = NetSDKLib.NETSDK_INSTANCE.CLIENT_PlayBackByDataType(loginSDK.getLUserID(), stuIn, stuOut, 5000);
+            if (lHisPlayHandle.longValue() != 0) {
+                // 保存回放句柄
+                cameraPojo.setlHisPlayHandle(lHisPlayHandle);
+                // 将callBack保存在缓存中
+                CacheUtil.HISTORYCALLBACK.put(cameraPojo.getToken(), fPlayDataCallBack);
+                // 保存回放句柄
+                CacheUtil.PLAY_BACK_PLAY_HANDLE.put(cameraPojo.getIp(), lHisPlayHandle);
+                logger.info("dhsdk 按时间回放录像文件成功" + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
+                        + cameraPojo.getPort() + " channel:" + cameraPojo.getChannel() + " statrtime:" + cameraPojo.getStarttime() + " endtime:"
+                        + cameraPojo.getEndtime() + "]");
+                return true;
             } else {
-                logger.error("回放登录设备失败:{}", ToolKits.getErrorCode());
+                errorcode = NetSDKLib.NETSDK_INSTANCE.CLIENT_GetLastError();
+                logger.error("dhsdk 按时间回放录像文件失败,错误码:" + ToolKits.getErrorCode() + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
+                        + cameraPojo.getPort() + " channel:" + cameraPojo.getChannel() + " statrtime:" + cameraPojo.getStarttime() + " endtime:"
+                        + cameraPojo.getEndtime() + "]");
                 return false;
             }
-        playSign = 1;// 历史回放标志
-        fPlayDataCallBack = new PlayDataCallBack(outputStream);
-        NetSDKLib.NET_IN_PLAYBACK_BY_DATA_TYPE stuIn = new NetSDKLib.NET_IN_PLAYBACK_BY_DATA_TYPE();
-        String[] begin = cameraPojo.getStarttime().split(" ");
-        NetSDKLib.NET_TIME start_time = handleDate(begin[0], begin[1]);
-        String[] end = cameraPojo.getEndtime().split(" ");
-        NetSDKLib.NET_TIME end_time = handleDate(end[0], end[1]);
-        stuIn.stStartTime = start_time;
-        stuIn.stStopTime = end_time;
-        stuIn.hWnd = null;        // 播放窗格
-        stuIn.dwPosUser = null;
-        stuIn.nChannelID = Integer.parseInt(cameraPojo.getChannel());
-        stuIn.fDownLoadDataCallBack = fPlayDataCallBack;
-        stuIn.dwDataUser = null;
-        stuIn.emDataType = NetSDKLib.EM_REAL_DATA_TYPE.EM_REAL_DATA_TYPE_FLV_STREAM;
-        stuIn.nPlayDirection = 0;                            // 正放
-        NetSDKLib.NET_OUT_PLAYBACK_BY_DATA_TYPE stuOut = new NetSDKLib.NET_OUT_PLAYBACK_BY_DATA_TYPE();
-        lHisPlayHandle = NetSDKLib.NETSDK_INSTANCE.CLIENT_PlayBackByDataType(lUserID, stuIn, stuOut, 5000);
-        if (lHisPlayHandle.longValue() != 0) {
-            // 保存回放句柄
-            cameraPojo.setlHisPlayHandle(lHisPlayHandle);
-            // 将callBack保存在缓存中
-            CacheUtil.HISTORYCALLBACK.put(cameraPojo.getToken(), fPlayDataCallBack);
-            // 保存回放时句柄用于后期快放，慢放操作
-            logger.info("dhsdk 按时间回放录像文件成功" + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
-                    + cameraPojo.getPort() + " channel:" + cameraPojo.getChannel() + " statrtime:" + cameraPojo.getStarttime() + " endtime:"
-                    + cameraPojo.getEndtime() + "]");
-            return true;
-        } else {
-            errorcode = NetSDKLib.NETSDK_INSTANCE.CLIENT_GetLastError();
-            logger.error("dhsdk 按时间回放录像文件失败,错误码:" + ToolKits.getErrorCode() + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
-                    + cameraPojo.getPort() + " channel:" + cameraPojo.getChannel() + " statrtime:" + cameraPojo.getStarttime() + " endtime:"
-                    + cameraPojo.getEndtime() + "]");
-            return false;
         }
-    }
 
-}
+    }
 
 
     /**
