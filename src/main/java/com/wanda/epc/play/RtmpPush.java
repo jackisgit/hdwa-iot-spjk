@@ -109,7 +109,7 @@ public class RtmpPush {
 		try {
 			inputStream.close();
 			outputStream.close();
-//			Utils.sdkRelease(sdkHandle, playSign);
+			Utils.sdkRelease(sdkHandle, playSign);
 			grabber.stop();
 			grabber.close();
 			if (recorder != null) {
@@ -164,7 +164,7 @@ public class RtmpPush {
 			} else {
 				framerate = 25.0;
 			}
-			recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), (grabber.getImageWidth()/16)*9);
+			recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), grabber.getImageHeight());
 			recorder.setFormat("flv");
 			recorder.setInterleaved(true);
 			recorder.setVideoOption("preset", "ultrafast");
