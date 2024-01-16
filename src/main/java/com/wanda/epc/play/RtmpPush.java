@@ -132,19 +132,14 @@ public class RtmpPush {
 			// 恢复拖动状态
 			pojo.setReHistory(false);
 			FFmpegLogCallback.setLevel(avutil.AV_LOG_QUIET);
+			FFmpegLogCallback.set();
 			grabber = new FFmpegFrameGrabber(inputStream, 0);
 			//有些码率什么可以自己设置、不过没有必要
-			grabber.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-			// 设置读取的最大数据，单位字节 为了加快首播速度
-			grabber.setOption("probesize", "8192");
-			// 设置分析的最长时间，单位微秒 为了加快首播速度
-			grabber.setOption("analyzeduration", "1000000");
-			// 5秒超时 单位微秒
-			grabber.setOption("stimeout", "5000000");
-			// 5秒超时 单位微秒
-			grabber.setOption("rw_timeout", "5000000");
-			// 设置缓存大小，提高画质、减少卡顿花屏
-			grabber.setOption("buffer_size", "1024000");
+			grabber.setVideoOption("vcodec", "copy");
+			grabber.setFormat("mpeg");
+			grabber.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+			grabber.setVideoCodec(avcodec.AV_CODEC_ID_HEVC);
+			grabber.setAudioStream(Integer.MAX_VALUE);
 			// 用于检测海康sdk回调函数是否有数据流产生，从而避免没有数据流导致avformat_open_input()函数阻塞
 			long stime = new Date().getTime();
 			while (true) {
@@ -172,8 +167,10 @@ public class RtmpPush {
 			recorder.setVideoOption("tune", "zerolatency");
 			recorder.setVideoOption("crf", "25");
 			recorder.setSampleRate(grabber.getSampleRate());
+			recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
 			recorder.setFrameRate(framerate);
 			recorder.setVideoBitrate(bitrate);
+			recorder.setGopSize(50);
 			//h264只需要转封装
 			if (grabber.getVideoCodec() == avcodec.AV_CODEC_ID_H264) {
 				recorder.start(grabber.getFormatContext());
