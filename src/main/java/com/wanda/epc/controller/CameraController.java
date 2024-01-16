@@ -7,7 +7,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.netsdk.lib.NetSDKLib;
 import com.netsdk.lib.ToolKits;
 import com.wanda.epc.cache.CacheUtil;
@@ -37,10 +36,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,7 +88,7 @@ public class CameraController {
         String[] ipStr = ip.split(",");
         List<String> ipList = Arrays.asList(ipStr);
         loginSDK = new DHLoginSDK();
-        if (!org.springframework.util.CollectionUtils.isEmpty(ipList)) {
+        if (ipList.size() > 0) {
             for (String add : ipList) {
                 String[] split = add.split(":");
                 CameraPojo pojo = new CameraPojo();
@@ -292,6 +287,7 @@ public class CameraController {
         String opentime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime());
         String streamId = pojo.getIp() + pojo.getChannel();
         Boolean media = getMediaList(streamId);
+        pojo.setToken(streamId);
         if (media) {
             logger.info("预览视频流已存在,直接获取");
             String hlsUrl = "http://".concat(projectIp).concat(":8081/live/").concat(streamId).concat("/hls.m3u8");
@@ -311,6 +307,14 @@ public class CameraController {
                 // 使用人数+1
                 CacheUtil.LOGINSDK.get(pojo.getIp()).setCount(CacheUtil.LOGINSDK.get(pojo.getIp()).getCount() + 1);
                 login = CacheUtil.LOGINSDK.get(pojo.getIp());
+                // 执行推流任务
+                CameraThread.MyRunnable job = new CameraThread.MyRunnable(pojo, login);
+                CameraThread.MyRunnable.es.execute(job);
+                JOBMAP.put(streamId, job);
+                map.put("pojo", pojo);
+                map.put("code", 0);
+                map.put("url", url);
+                map.put("message", "打开视频流成功");
             } else {
                 login = new DHLoginSDK();
                 login.login(pojo);
@@ -341,7 +345,8 @@ public class CameraController {
                 CameraThread.MyRunnable.es.execute(job);
                 JOBMAP.put(streamId, job);
                 map.put("pojo", pojo);
-                map.put("errorcode", login.getErrorCode());
+                map.put("code", 0);
+                map.put("url", url);
                 map.put("message", "打开视频流成功");
             }
         }
@@ -351,9 +356,11 @@ public class CameraController {
     public Map<String, Object> openPlaybackCamera(CameraPojo pojo) {
         DHLoginSDK login = null;// 设备注册信息
         Map<String, Object> map = new LinkedHashMap<>();
+        String date = date(pojo.getStarttime());
         String opentime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime());
-        String streamId = pojo.getIp() + pojo.getChannel();
+        String streamId = pojo.getIp().concat(date).concat("_").concat(pojo.getChannel());
         Boolean media = getMediaList(streamId);
+        pojo.setToken(streamId);
         if (media) {
             logger.info("预览视频流已存在,直接获取");
             String hlsUrl = "http://".concat(projectIp).concat(":8081/history/").concat(streamId).concat("/hls.m3u8");
@@ -377,39 +384,40 @@ public class CameraController {
                 NetSDKLib.LLong lUserID = login.getLUserID();
                 boolean result = login.logoutBack(lUserID);
                 logger.info("回放注销登录句柄结果：{}", result);
-            } else {
-                login = new DHLoginSDK();
-                login.login(pojo);
-                if (login.getIsLogin()) {
-                    // 设备注册成功
-                    logger.info("大华回放设备注册成功 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort()
-                            + " username:" + pojo.getUsername() + " password:" + pojo.getPassword()
-                            + " channel:" + pojo.getChannel() + "]");
-                    // 使用人数+1
-                    login.setCount(login.getCount() + 1);
-                    CacheUtil.PLAY_BACK_LOGIN_MODULE.put(pojo.getIp(), login);
-                } else {
-                    logger.error("大华回放设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + pojo.getIp()
-                            + " port:" + pojo.getPort() + " username:" + pojo.getUsername() + " password:"
-                            + pojo.getPassword() + " channel:" + pojo.getChannel() + " stream:" + "]");
-                    map.put("pojo", pojo);
-                    if (login.getErrorCode() == 7) {
-                        map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
-                        map.put("errorcode", 7);
-                    } else {
-                        map.put("message", "其他错误");
-                        map.put("errorcode", 6);
-                    }
-                    return map;
-                }
-                // 执行推流任务
-                CameraThread.MyRunnable job = new CameraThread.MyRunnable(pojo, login);
-                CameraThread.MyRunnable.es.execute(job);
-                JOBMAP.put(streamId, job);
-                map.put("pojo", pojo);
-                map.put("errorcode", login.getErrorCode());
-                map.put("message", "打开视频流成功");
+                CacheUtil.PLAY_BACK_LOGIN_MODULE.remove(pojo.getIp());
             }
+            login = new DHLoginSDK();
+            login.login(pojo);
+            if (login.getIsLogin()) {
+                // 设备注册成功
+                logger.info("大华回放设备注册成功 设备信息：[ip:" + pojo.getIp() + " port:" + pojo.getPort()
+                        + " username:" + pojo.getUsername() + " password:" + pojo.getPassword()
+                        + " channel:" + pojo.getChannel() + "]");
+                // 使用人数+1
+                login.setCount(login.getCount() + 1);
+                CacheUtil.PLAY_BACK_LOGIN_MODULE.put(pojo.getIp(), login);
+            } else {
+                logger.error("大华回放设备注册失败  ,错误码:" + login.getErrorCode() + " 设备信息：[ip:" + pojo.getIp()
+                        + " port:" + pojo.getPort() + " username:" + pojo.getUsername() + " password:"
+                        + pojo.getPassword() + " channel:" + pojo.getChannel() + " stream:" + "]");
+                map.put("pojo", pojo);
+                if (login.getErrorCode() == 7) {
+                    map.put("message", "连接设备失败,设备不在线或网络原因引起的连接超时等");
+                    map.put("code", 7);
+                } else {
+                    map.put("message", "其他错误");
+                    map.put("code", 6);
+                }
+                return map;
+            }
+            // 执行推流任务
+            CameraThread.MyRunnable job = new CameraThread.MyRunnable(pojo, login);
+            CameraThread.MyRunnable.es.execute(job);
+            JOBMAP.put(streamId, job);
+            map.put("pojo", pojo);
+            map.put("code", 0);
+            map.put("url", url);
+            map.put("message", "打开视频流成功");
         }
         return map;
     }
