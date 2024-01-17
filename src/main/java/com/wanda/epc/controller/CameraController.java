@@ -83,27 +83,6 @@ public class CameraController {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-        DHLoginSDK loginSDK = null;
-        String[] ipStr = ip.split(",");
-        List<String> ipList = Arrays.asList(ipStr);
-        loginSDK = new DHLoginSDK();
-        if (ipList.size() > 0) {
-            for (String add : ipList) {
-                String[] split = add.split(":");
-                CameraPojo pojo = new CameraPojo();
-                pojo.setIp(split[0]);
-                pojo.setUsername(split[1]);
-                pojo.setPassword(split[2]);
-                pojo.setPort("37777");
-                loginSDK.login(pojo);
-                if (loginSDK.getIsLogin()) {
-                    CacheUtil.LOGINSDK.put(pojo.getIp(), loginSDK);
-                } else {
-                    logger.error("IP：{} account;{} password:{} 登录失败：{}", pojo.getIp(), pojo.getUsername(), pojo.getPassword(), ToolKits.getErrorCode());
-                }
-            }
-        }
     }
 
 

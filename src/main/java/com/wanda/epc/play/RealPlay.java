@@ -129,21 +129,21 @@ public class RealPlay {
             inParam.dwUser = null;
             //返回对象
             NetSDKLib.NET_OUT_REALPLAY_BY_DATA_TYPE stOut = new NetSDKLib.NET_OUT_REALPLAY_BY_DATA_TYPE();
-            logger.info("实时预览用户句柄：{}", login.getLUserID().longValue());
+            logger.info("实时预览用户句柄：{}", login.getLUserID().intValue());
             NetSDKLib.LLong lUserID = login.getLUserID();
             lRealPlayHandle = NetSDKLib.NETSDK_INSTANCE.CLIENT_RealPlayByDataType(lUserID, inParam, stOut, 5000);
             errorcode = NetSDKLib.NETSDK_INSTANCE.CLIENT_GetLastError();
-            logger.info("实时预览句柄：{},错误状态码：{}", lRealPlayHandle.longValue(), ToolKits.getErrorCode());
-            if (lRealPlayHandle.longValue() != 0) {
+            logger.info("实时预览句柄：{},错误状态码：{}", lRealPlayHandle.intValue(), ToolKits.getErrorCode());
+            if (lRealPlayHandle.intValue() != 0) {
                 // 将callBack保存在缓存中
                 CacheUtil.LIVECALLBACK.put(cameraPojo.getToken(), realDataCallBack);
                 //保存预览时登录句柄后期用于云台控制
-                logger.info("hcsdk 实时预览成功  设备信息：[ip:" + cameraPojo.getIp() + " port:" + cameraPojo.getPort()
+                logger.info("dahuasdk 实时预览成功  设备信息：[ip:" + cameraPojo.getIp() + " port:" + cameraPojo.getPort()
                         + " channel:" + cameraPojo.getChannel() + "]");
                 return true;
             } else {
                 logger.info(ToolKits.getErrorCode());
-                logger.error("hcsdk 实时预览失败,错误码：" + errorcode + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
+                logger.error("dahuasdk 实时预览失败,错误码：" + errorcode + " 设备信息：[ip:" + cameraPojo.getIp() + " port:"
                         + cameraPojo.getPort() + " channel:" + cameraPojo.getChannel() + "]");
                 return false;
 
