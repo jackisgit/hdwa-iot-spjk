@@ -133,18 +133,11 @@ public class RtmpPush {
             pojo.setReHistory(false);
             FFmpegLogCallback.setLevel(avutil.AV_LOG_QUIET);
             grabber = new FFmpegFrameGrabber(inputStream, 0);
-            //有些码率什么可以自己设置、不过没有必要
+            grabber.setVideoOption("vcodec", "copy");
+            grabber.setFormat("mpeg");
+            grabber.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
             grabber.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-            // 设置读取的最大数据，单位字节 为了加快首播速度
-            grabber.setOption("probesize", "8192");
-            // 设置分析的最长时间，单位微秒 为了加快首播速度
-            grabber.setOption("analyzeduration", "1000000");
-            // 5秒超时 单位微秒
-            grabber.setOption("stimeout", "5000000");
-            // 5秒超时 单位微秒
-            grabber.setOption("rw_timeout", "5000000");
-            // 设置缓存大小，提高画质、减少卡顿花屏
-            grabber.setOption("buffer_size", "1024000");
+            grabber.setAudioStream(Integer.MAX_VALUE);
             // 用于检测海康sdk回调函数是否有数据流产生，从而避免没有数据流导致avformat_open_input()函数阻塞
             long stime = new Date().getTime();
             while (true) {
@@ -165,15 +158,21 @@ public class RtmpPush {
             } else {
                 framerate = 25.0;
             }
-            recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), grabber.getImageHeight());
-            recorder.setFormat("flv");
+            bitrate = grabber.getVideoBitrate();// 获取到的比特率 0
+            recorder = new FFmpegFrameRecorder(pojo.getRtmp(), grabber.getImageWidth(), grabber.getImageHeight(), 0);
             recorder.setInterleaved(true);
-            recorder.setVideoOption("preset", "ultrafast");
-            recorder.setVideoOption("tune", "zerolatency");
-            recorder.setVideoOption("crf", "25");
-            recorder.setSampleRate(grabber.getSampleRate());
-            recorder.setFrameRate(framerate);
+            recorder.setVideoOptions(this.videoOption);
+            // 设置比特率
             recorder.setVideoBitrate(bitrate);
+            // h264编/解码器
+            recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+            // 封装flv格式
+            recorder.setFormat("flv");
+            recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+            // 视频帧率(保证视频质量的情况下最低25，低于25会出现闪屏)
+            recorder.setFrameRate(framerate);
+            // 关键帧间隔，一般与帧率相同或者是视频帧率的两倍
+            recorder.setGopSize(50);
             //h264只需要转封装
             if (grabber.getVideoCodec() == avcodec.AV_CODEC_ID_H264) {
                 recorder.start(grabber.getFormatContext());

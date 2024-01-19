@@ -5,7 +5,7 @@ server:
 
 config:
 # 直播流保活时间(分钟)
-  keepalive: ${CAMERASERVER_KEEPALIVE:120}
+  keepalive: ${CAMERASERVER_KEEPALIVE:60}
 # nginx推送地址
   push_host: ${CAMERASERVER_PUSH_HOST:127.0.0.1}
 #  push_host: ${CAMERASERVER_PUSH_HOST:192.168.0.31}
@@ -71,4 +71,4 @@ spring:
       # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
       connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=1000
       #stat-view-servlet.url-pattern: /admin/druid/*
-projectIp: 10.65.16.85
+projectIp: 10.92.16.10
