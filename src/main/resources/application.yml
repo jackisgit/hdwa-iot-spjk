@@ -5,7 +5,7 @@ server:
    
 config:
 # 直播流保活时间(分钟)
-  keepalive: ${CAMERASERVER_KEEPALIVE:1000}
+  keepalive: ${CAMERASERVER_KEEPALIVE:60}
 # nginx推送地址
   push_host: ${CAMERASERVER_PUSH_HOST:127.0.0.1}
 #  push_host: ${CAMERASERVER_PUSH_HOST:192.168.0.31}
@@ -34,9 +34,9 @@ config:
   # 抓图到指定目录
   picturepath: ${CAMERASERVER_PICTUREPATH:E:\wanda\zlm-win-x86_64\www\history}
 # 删除服务器上的录像文件周期
-  deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0 * * ?}
+  deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0,12 * * ?}
 # 删除服务器上的抓图文件周期
-  deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0 * * ?}
+  deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0,12 * * ?}
   
  
 # logback
