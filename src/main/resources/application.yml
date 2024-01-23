@@ -34,9 +34,9 @@ config:
   # 抓图到指定目录
   picturepath: ${CAMERASERVER_PICTUREPATH:E:\wanda\zlm-win-x86_64\www\history}
   # 删除服务器上的录像文件周期
-  deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0 * * ?}
+  deletevideocron: ${CAMERASERVER_DELETEVIDEOCRON:0 0 0,12 * * ?}
   # 删除服务器上的抓图文件周期
-  deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0 * * ?}
+  deletepicturecron: ${CAMERASERVER_DELETEPICTURECRON:0 0 0,12 * * ?}
 
 
 # logback
