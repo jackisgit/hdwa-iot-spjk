@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+*-logs/
+rebel.xml
+lib.zip
+.DS_Store

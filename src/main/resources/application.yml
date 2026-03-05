@@ -71,6 +71,6 @@ spring:
       # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
       connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=1000
       #stat-view-servlet.url-pattern: /admin/druid/*
-projectIp: 10.2.17.241
+projectIp: 10.125.16.60
 
-ip: "10.2.17.151:admin:admin,10.2.17.158:admin:admin,10.2.17.165:admin:admin,10.2.17.172:admin:admin,10.2.17.179:admin:admin,10.2.17.152:admin:admin,10.2.17.159:admin:admin,10.2.17.166:admin:admin,10.2.17.173:admin:admin,10.2.17.153:admin:admin,10.2.17.160:admin:admin,10.2.17.167:admin:admin,10.2.17.174:admin:admin,10.2.17.181:admin:admin,10.2.17.154:admin:admin,10.2.17.161:admin:admin,10.2.17.168:admin:admin123,10.2.17.182:admin:admin,10.2.17.155:admin:admin,10.2.17.162:admin:admin,10.2.17.169:admin:admin,10.2.17.176:admin:admin,10.2.17.156:admin:admin,10.2.17.163:admin:admin,10.2.17.170:admin:admin,10.2.17.157:admin:admin,10.2.17.164:admin:admin,10.2.17.171:admin:admin,10.2.17.178:admin:admin"
+ip: ""
